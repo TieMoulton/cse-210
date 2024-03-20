@@ -1,85 +1,118 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
-class Program
+
+public abstract class Goal
 {
-    static void Main()
+    public string Name { get; set; }
+    public int Value { get; set; }
+
+    public Goal(string name, int value)
     {
-        var scripture = new Scripture("John 3:16", "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.");
-        var scriptureDisplayer = new ScriptureDisplayer(scripture);
+        Name = name;
+        Value = value;
+    }
 
-        while (!scriptureDisplayer.AllWordsRevealed)
-        {
-            Console.Clear();
-            scriptureDisplayer.Display();
+    public abstract void RecordEvent();
+    public abstract string Progress();
+}
 
-            Console.WriteLine();
-            Console.WriteLine("Press Enter to reveal more words or type 'quit' to exit.");
 
-            string input = Console.ReadLine();
+public class SimpleGoal : Goal
+{
+    private bool completed = false;
 
-            if (input.ToLower() == "quit")
-            {
-                break;
-            }
+    public SimpleGoal(string name, int value) : base(name, value)
+    {
+    }
 
-            scriptureDisplayer.HideRandomWord();
-        }
+    public override void RecordEvent()
+    {
+        completed = true;
+    }
 
-        Console.WriteLine();
-        Console.WriteLine("All words have been revealed. Press Enter to exit.");
-        Console.ReadLine();
+    public override string Progress()
+    {
+        return completed ? "[X]" : "[ ]";
     }
 }
 
-class Scripture
+public class EternalGoal : Goal
 {
-    public string Reference { get; }
-    public string Text { get; }
+    private int count = 0;
 
-    public Scripture(string reference, string text)
+    public EternalGoal(string name, int value) : base(name, value)
     {
-        Reference = reference;
-        Text = text;
     }
 
-    public List<string> GetWords()
+    public override void RecordEvent()
     {
-        return Text.Split(' ').ToList();
+        count++;
+    }
+
+    public override string Progress()
+    {
+        return $"Completed {count} times";
     }
 }
 
-class ScriptureDisplayer
+
+public class ChecklistGoal : Goal
 {
-    private readonly Scripture _scripture;
-    private readonly List<int> _hiddenIndices;
+    private int count = 0;
+    private int requiredCount;
 
-    public bool AllWordsRevealed => _hiddenIndices.Count >= _scripture.GetWords().Count;
-
-    public ScriptureDisplayer(Scripture scripture)
+    public ChecklistGoal(string name, int value, int requiredCount) : base(name, value)
     {
-        _scripture = scripture;
-        _hiddenIndices = new List<int>();
+        this.requiredCount = requiredCount;
     }
 
-    public void Display()
+    public override void RecordEvent()
     {
-        foreach (var word in _scripture.GetWords())
-        {
-            Console.Write(_hiddenIndices.Contains(_scripture.GetWords().IndexOf(word)) ? new string('*', word.Length) + " " : word + " ");
-        }
+        count++;
     }
 
-    public void HideRandomWord()
+    public override string Progress()
     {
-        var words = _scripture.GetWords();
-        var rand = new Random();
-        int index = rand.Next(words.Count);
-
-        if (!_hiddenIndices.Contains(index))
+        if (count < requiredCount)
         {
-            _hiddenIndices.Add(index);
+            return $"Completed {count}/{requiredCount} times";
         }
+        else
+        {
+            return $"Completed {count}/{requiredCount} times. Bonus achieved!";
+        }
+    }
+}
+
+public class Program
+{
+    private static List<Goal> goals = new List<Goal>();
+    private static int score = 0;
+
+    public static void Main()
+    {
+    
+        goals.Add(new SimpleGoal("Run a marathon", 1000));
+        goals.Add(new EternalGoal("Read scriptures", 100));
+        goals.Add(new ChecklistGoal("Attend the temple", 50, 10));
+
+        
+        goals[0].RecordEvent(); 
+        goals[1].RecordEvent(); 
+        goals[2].RecordEvent(); 
+
+        
+        foreach (var goal in goals)
+        {
+            Console.WriteLine($"{goal.Name}: {goal.Progress()}");
+        }
+
+        
+        foreach (var goal in goals)
+        {
+            score += goal.Value;
+        }
+        Console.WriteLine($"Total Score: {score}");
     }
 }
